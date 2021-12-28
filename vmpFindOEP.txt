@@ -1,0 +1,46 @@
+// bumo
+
+mov $textSessionAddress, mem.base(mod.main())+mem.size(mem.base(mod.main()))
+mov $textSessionAddressEnd,$textSessionAddress+ mem.size($textSessionAddress)
+
+
+log {$textSessionAddress}
+log {$textSessionAddressEnd}
+
+bp ZwProtectVirtualMemory+0xA
+bpcnd ZwProtectVirtualMemory+0xA,[[esp+8]] ==  $textSessionAddress
+
+run
+step
+run
+step
+
+bc ZwProtectVirtualMemory+0xA
+
+loop:
+bpm $textSessionAddress,1,x
+run
+
+cmp eip,$textSessionAddress
+jb next
+
+cmp eip,$textSessionAddressEnd
+ja next
+
+
+cmp byte(eip),0xC3
+
+bpmc $textSessionAddress
+jne over
+step
+jmp loop
+
+
+next:
+bpmc $textSessionAddress
+step
+jmp loop
+
+
+over:
+msg "over"
